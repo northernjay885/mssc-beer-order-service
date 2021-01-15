@@ -2,6 +2,7 @@ package guru.sfg.beer.order.service.sm;
 
 import guru.sfg.beer.order.service.domain.BeerOrderEventEnum;
 import guru.sfg.beer.order.service.domain.BeerOrderStatusEnum;
+import guru.sfg.beer.order.service.sm.actions.AllocateOrderAction;
 import guru.sfg.beer.order.service.sm.actions.ValidateOrderAction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,7 @@ import java.util.EnumSet;
 public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<BeerOrderStatusEnum, BeerOrderEventEnum> {
 
     private final ValidateOrderAction validateOrderAction;
+    private final AllocateOrderAction allocateOrderAction;
 
     @Override
     public void configure(StateMachineStateConfigurer<BeerOrderStatusEnum, BeerOrderEventEnum> states) throws Exception {
@@ -34,12 +36,20 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
 
     @Override
     public void configure(StateMachineTransitionConfigurer<BeerOrderStatusEnum, BeerOrderEventEnum> transitions) throws Exception {
-        transitions.withExternal().source(BeerOrderStatusEnum.NEW).target(BeerOrderStatusEnum.VALIDATION_PENDING).event(BeerOrderEventEnum.VALIDATE_ORDER)
+        transitions.withExternal().source(BeerOrderStatusEnum.NEW).target(BeerOrderStatusEnum.VALIDATION_PENDING)
+                .event(BeerOrderEventEnum.VALIDATE_ORDER)
                 .action(validateOrderAction)
                 .and()
-                .withExternal().source(BeerOrderStatusEnum.NEW).target(BeerOrderStatusEnum.VALIDATED).event(BeerOrderEventEnum.VALIDATION_PASS)
+                .withExternal().source(BeerOrderStatusEnum.NEW).target(BeerOrderStatusEnum.VALIDATED)
+                .event(BeerOrderEventEnum.VALIDATION_PASS)
                 .and()
-                .withExternal().source(BeerOrderStatusEnum.NEW).target(BeerOrderStatusEnum.VALIDATION_EXCEPTION).event(BeerOrderEventEnum.VALIDATION_FAILED);
+                .withExternal().source(BeerOrderStatusEnum.NEW).target(BeerOrderStatusEnum.VALIDATION_EXCEPTION)
+                .event(BeerOrderEventEnum.VALIDATION_FAILED)
+                .and()
+                .withExternal().source(BeerOrderStatusEnum.VALIDATED).target(BeerOrderStatusEnum.ALLOCATION_PENDING)
+                .event(BeerOrderEventEnum.ALLOCATED_ORDER)
+                .action(allocateOrderAction);
+
     }
 
     @Override

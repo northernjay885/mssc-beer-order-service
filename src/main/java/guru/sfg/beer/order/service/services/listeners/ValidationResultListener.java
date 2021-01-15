@@ -1,4 +1,4 @@
-package guru.sfg.beer.order.service.services.valiate;
+package guru.sfg.beer.order.service.services.listeners;
 
 
 import guru.sfg.beer.order.service.config.JmsConfig;
