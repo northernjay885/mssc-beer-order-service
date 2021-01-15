@@ -29,7 +29,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BeerOrderDto{
+public class BeerOrderDto {
 
     @JsonProperty("id")
     private UUID id = null;
