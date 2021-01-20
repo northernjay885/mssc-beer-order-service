@@ -32,7 +32,7 @@ public class ValidateOrderAction implements Action<BeerOrderStatusEnum, BeerOrde
         String beerOrderId = (String) stateContext
                 .getMessage()
                 .getHeaders().getOrDefault(BeerOrderManagerImpl.ORDER_ID_HEADER, " ");
-        BeerOrder beerOrder = beerOrderRepository.findOneById(UUID.fromString(beerOrderId));
+        BeerOrder beerOrder = beerOrderRepository.getOne(UUID.fromString(beerOrderId));
         
         jmsTemplate.convertAndSend(JmsConfig.VALIDATE_ORDER_QUEUE, ValidateOrderRequest.builder().
                 beerOrder(beerOrderMapper.beerOrderToDto(beerOrder))

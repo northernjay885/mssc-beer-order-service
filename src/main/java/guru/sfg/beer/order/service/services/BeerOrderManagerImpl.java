@@ -7,6 +7,7 @@ import guru.sfg.beer.order.service.repositories.BeerOrderRepository;
 import guru.sfg.brewery.model.BeerOrderDto;
 import guru.sfg.brewery.model.events.ValidateOrderResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
@@ -16,8 +17,9 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.util.Optional;
+import java.util.UUID;
 
-
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class BeerOrderManagerImpl implements BeerOrderManager {
@@ -63,19 +65,25 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         return sm;
     }
 
+    @Transactional
     @Override
     public void sendValidationToStateMachine(ValidateOrderResult result) {
+        log.debug("Process Validation Result for beerOrderId: " + result.getOrderId() + " Valid? " + result.getIsValid());
 
-        BeerOrder beerOrder = beerOrderRepository.getOne(result.getOrderId());
+        Optional<BeerOrder> beerOrderOptional = beerOrderRepository.findById(result.getOrderId());
 
-        if (result.getIsValid()) {
-            sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_PASS);
+        beerOrderOptional.ifPresentOrElse(beerOrder -> {
+            if (result.getIsValid()) {
+                sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_PASS);
 
-            BeerOrder validatedOrder = beerOrderRepository.findOneById(result.getOrderId());
-            sendBeerOrderEvent(validatedOrder, BeerOrderEventEnum.ALLOCATED_ORDER);
-        } else {
-            sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_FAILED);
-        }
+                BeerOrder validatedOrder = beerOrderRepository.findById(result.getOrderId()).get();
+                sendBeerOrderEvent(validatedOrder, BeerOrderEventEnum.ALLOCATED_ORDER);
+            } else {
+                sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_FAILED);
+            }
+        }, () -> log.error("Order Not Found. Id: " + result.getOrderId()));
+
+
 
     }
 
@@ -112,5 +120,15 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         });
 
         beerOrderRepository.saveAndFlush(beerOrder);
+    }
+
+    @Override
+    public void beerOrderPickedUp(UUID id) {
+        Optional<BeerOrder> beerOrderOptional = beerOrderRepository.findById(id);
+
+        beerOrderOptional.ifPresentOrElse(beerOrder -> {
+            //do process
+            sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.BEER_ORDER_PICKED_UP);
+        }, () -> log.error("Order Not Found. Id: " + id));
     }
 }
