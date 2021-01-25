@@ -4,6 +4,7 @@ import guru.sfg.beer.order.service.domain.BeerOrder;
 import guru.sfg.beer.order.service.domain.BeerOrderEventEnum;
 import guru.sfg.beer.order.service.domain.BeerOrderStatusEnum;
 import guru.sfg.beer.order.service.repositories.BeerOrderRepository;
+import guru.sfg.beer.order.service.sm.BeerOrderStateChangeInterceptor;
 import guru.sfg.brewery.model.BeerOrderDto;
 import guru.sfg.brewery.model.events.ValidateOrderResult;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +30,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
     private final StateMachineFactory<BeerOrderStatusEnum, BeerOrderEventEnum> stateMachineFactory;
     private final BeerOrderRepository beerOrderRepository;
     private final BeerOrderStateChangeInterceptor beerOrderStateChangeInterceptor;
+    private final EntityManager entityManager;
 
     @Transactional
     @Override
@@ -67,10 +70,10 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
 
     @Transactional
     @Override
-    public void sendValidationToStateMachine(ValidateOrderResult result) {
+    public void sendValidationToStateMachine(ValidateOrderResult result) throws InterruptedException {
         log.debug("Process Validation Result for beerOrderId: " + result.getOrderId() + " Valid? " + result.getIsValid());
 
-        BeerOrder beerOrder1 = beerOrderRepository.getOne(result.getOrderId());
+        Thread.sleep(8); //todo still don't know why it would run into a race condition
         Optional<BeerOrder> beerOrderOptional = beerOrderRepository.findById(result.getOrderId());
 
         beerOrderOptional.ifPresentOrElse(beerOrder -> {
@@ -148,6 +151,15 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         beerOrderOptional.ifPresentOrElse(beerOrder -> {
             //do process
             sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.BEER_ORDER_PICKED_UP);
+        }, () -> log.error("Order Not Found. Id: " + id));
+    }
+
+    @Override
+    public void beerOrderCancel(UUID id) {
+        Optional<BeerOrder> beerOrderOptional = beerOrderRepository.findById(id);
+
+        beerOrderOptional.ifPresentOrElse(beerOrder -> {
+            sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.CANCEL_ORDER);
         }, () -> log.error("Order Not Found. Id: " + id));
     }
 }

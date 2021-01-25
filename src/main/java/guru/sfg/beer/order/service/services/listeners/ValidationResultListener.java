@@ -15,11 +15,10 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ValidationResultListener {
 
-    private final JmsTemplate jmsTemplate;
     private final BeerOrderManager beerOrderManager;
 
     @JmsListener(destination = JmsConfig.VALIDATE_ORDER_RESPONSE_QUEUE)
-    public void listen(ValidateOrderResult result) {
+    public void listen(ValidateOrderResult result) throws InterruptedException {
 
         log.debug("Validation Result for Order Id: " + result.getOrderId());
         beerOrderManager.sendValidationToStateMachine(result);
