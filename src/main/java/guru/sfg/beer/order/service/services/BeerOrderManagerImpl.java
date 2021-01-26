@@ -71,25 +71,25 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
 
     @Transactional
     @Override
-    public void sendValidationToStateMachine(ValidateOrderResult result) throws InterruptedException {
-        log.debug("Process Validation Result for beerOrderId: " + result.getOrderId() + " Valid? " + result.getIsValid());
+    public void sendValidationToStateMachine(Boolean isValid, UUID orderId) throws InterruptedException {
+        log.debug("Process Validation Result for beerOrderId: " + orderId + " Valid? " + isValid);
 
         Thread.sleep(8); //todo still don't know why it would run into a race condition
-        Optional<BeerOrder> beerOrderOptional = beerOrderRepository.findById(result.getOrderId());
+        Optional<BeerOrder> beerOrderOptional = beerOrderRepository.findById(orderId);
 
         beerOrderOptional.ifPresentOrElse(beerOrder -> {
-            if (result.getIsValid()) {
+            if (isValid) {
                 sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_PASS);
 
                 //wait for status change
                 awaitForStatus(beerOrder.getId(), BeerOrderStatusEnum.VALIDATED);
 
-                BeerOrder validatedOrder = beerOrderRepository.findById(result.getOrderId()).get();
+                BeerOrder validatedOrder = beerOrderRepository.findById(orderId).get();
                 sendBeerOrderEvent(validatedOrder, BeerOrderEventEnum.ALLOCATED_ORDER);
             } else {
                 sendBeerOrderEvent(beerOrder, BeerOrderEventEnum.VALIDATION_FAILED);
             }
-        }, () -> log.error("Order Not Found. Id: " + result.getOrderId()));
+        }, () -> log.error("Order Not Found. Id: " + orderId));
 
 
 

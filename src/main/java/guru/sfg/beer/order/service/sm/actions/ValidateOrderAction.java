@@ -38,6 +38,7 @@ public class ValidateOrderAction implements Action<BeerOrderStatusEnum, BeerOrde
                 beerOrder(beerOrderMapper.beerOrderToDto(beerOrder))
                 .build());
 
+
         log.debug("Sent Validation request to queue for order id " + beerOrderId);
     }
 }

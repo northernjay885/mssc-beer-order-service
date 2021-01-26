@@ -11,7 +11,7 @@ public interface BeerOrderManager {
 
     BeerOrder newBeerOrder(BeerOrder beerOrder);
 
-    void sendValidationToStateMachine(ValidateOrderResult validateOrderResult) throws InterruptedException;
+    void sendValidationToStateMachine(Boolean isValid, UUID orderId) throws InterruptedException;
 
     void beerOrderAllocationPassed(BeerOrderDto beerOrderDto);
 

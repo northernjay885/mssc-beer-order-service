@@ -23,8 +23,10 @@ import guru.sfg.beer.order.service.domain.Customer;
 import guru.sfg.beer.order.service.repositories.BeerOrderRepository;
 import guru.sfg.beer.order.service.repositories.CustomerRepository;
 import guru.sfg.beer.order.service.web.mappers.BeerOrderMapper;
+import guru.sfg.beer.order.service.web.mappers.CustomerMapper;
 import guru.sfg.brewery.model.BeerOrderDto;
 import guru.sfg.brewery.model.BeerOrderPagedList;
+import guru.sfg.brewery.model.CustomerPagedList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -34,6 +36,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -46,6 +49,7 @@ public class BeerOrderServiceImpl implements BeerOrderService {
     private final BeerOrderRepository beerOrderRepository;
     private final CustomerRepository customerRepository;
     private final BeerOrderMapper beerOrderMapper;
+    private final CustomerMapper customerMapper;
     private final BeerOrderManager beerOrderManager;
 
     @Override
@@ -120,5 +124,16 @@ public class BeerOrderServiceImpl implements BeerOrderService {
             throw new RuntimeException("Beer Order Not Found");
         }
         throw new RuntimeException("Customer Not Found");
+    }
+
+    @Override
+    public CustomerPagedList listCustomers(Pageable pageable) {
+
+        List<Customer> customers = customerRepository.findAll();
+
+        return new CustomerPagedList(customers.stream()
+                .map(customerMapper::customerToDto)
+                .collect(Collectors.toList()));
+
     }
 }
